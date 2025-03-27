@@ -4,31 +4,36 @@
 #include <string.h>
 #include <fcntl.h>
 
-#define BUFFER_SIZE 5  // Số lượng thông điệp tối đa trong buffer
 #define MAX_MESSAGE_LENGTH 256  // Độ dài tối đa của một thông điệp
 
 int main() {
     int fd;
     char *pipe_path = "/tmp/my_pipe";
     char buffer[MAX_MESSAGE_LENGTH];
-    int counter = 0;
 
     // Tạo pipe nếu chưa có
     mkfifo(pipe_path, 0666);
 
     // Mở pipe để ghi
     fd = open(pipe_path, O_WRONLY);
+    if (fd == -1) {
+        perror("Lỗi mở pipe");
+        exit(1);
+    }
 
     while (1) {
-        // Tạo thông điệp với độ dài tối đa MAX_MESSAGE_LENGTH
-        snprintf(buffer, MAX_MESSAGE_LENGTH, "Thông điệp %d: Đây là một câu có thể dài tối đa 256 ký tự.", counter++);
-        
+        printf("Nhập thông điệp (gõ 'exit' để thoát): ");
+        fgets(buffer, MAX_MESSAGE_LENGTH, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;  // Xóa ký tự xuống dòng
+
+        // Nếu nhập 'exit' thì thoát
+        if (strcmp(buffer, "exit") == 0) {
+            break;
+        }
+
         // Ghi thông điệp vào pipe
         write(fd, buffer, strlen(buffer) + 1);  // Ghi cả ký tự null kết thúc
-        printf("Producer: %s\n", buffer);
-        
-        // Tạo thời gian giả lập cho việc sản xuất
-        sleep(1);
+        printf("Producer gửi: %s\n", buffer);
     }
 
     close(fd);
